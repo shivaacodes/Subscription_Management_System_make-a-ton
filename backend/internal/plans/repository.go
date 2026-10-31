@@ -72,7 +72,7 @@ func (r *pgRepository) ListActivePlans(ctx context.Context) ([]Plan, error) {
 	}
 	defer rows.Close()
 
-	var plans []Plan
+	plans := make([]Plan, 0)
 	for rows.Next() {
 		var p Plan
 		if err := rows.Scan(
@@ -109,7 +109,7 @@ func (r *pgRepository) GetPlanProducts(ctx context.Context, planID string) ([]Pl
 	}
 	defer rows.Close()
 
-	var products []PlanProduct
+	products := make([]PlanProduct, 0)
 	for rows.Next() {
 		var pp PlanProduct
 		if err := rows.Scan(&pp.ID, &pp.PlanID, &pp.ProductID, &pp.IsAddon, &pp.IsRequired); err != nil {

@@ -98,7 +98,7 @@ func (r *pgRepository) GetQuotationByID(ctx context.Context, id string) (*Quotat
 	}
 	defer rows.Close()
 
-	var lines []QuotationLine
+	lines := make([]QuotationLine, 0)
 	for rows.Next() {
 		var l QuotationLine
 		var variantName string
@@ -135,7 +135,7 @@ func (r *pgRepository) ListQuotations(ctx context.Context, customerID *string) (
 	}
 	defer rows.Close()
 
-	var list []Quotation
+	list := make([]Quotation, 0)
 	for rows.Next() {
 		var q Quotation
 		if err := rows.Scan(
@@ -200,7 +200,7 @@ func (r *pgRepository) ListTemplates(ctx context.Context) ([]QuotationTemplate, 
 	}
 	defer rows.Close()
 
-	var templates []QuotationTemplate
+	templates := make([]QuotationTemplate, 0)
 	for rows.Next() {
 		var t QuotationTemplate
 		if err := rows.Scan(&t.ID, &t.Name, &t.Description, &t.ValidityDays, &t.PlanID, &t.IsActive, &t.CreatedAt, &t.UpdatedAt); err != nil {

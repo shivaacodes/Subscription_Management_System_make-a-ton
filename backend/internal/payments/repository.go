@@ -43,7 +43,7 @@ func (r *pgRepository) ListPaymentsByInvoiceID(ctx context.Context, invoiceID st
 	}
 	defer rows.Close()
 
-	var payments []Payment
+	payments := make([]Payment, 0)
 	for rows.Next() {
 		var p Payment
 		if err := rows.Scan(&p.ID, &p.InvoiceID, &p.PaymentNumber, &p.AmountCents, &p.PaymentMethod, &p.PaymentDate, &p.Notes, &p.CreatedAt); err != nil {
@@ -70,7 +70,7 @@ func (r *pgRepository) ListAllPayments(ctx context.Context, customerID *string) 
 	}
 	defer rows.Close()
 
-	var payments []Payment
+	payments := make([]Payment, 0)
 	for rows.Next() {
 		var p Payment
 		if err := rows.Scan(

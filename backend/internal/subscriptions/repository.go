@@ -101,7 +101,7 @@ func (r *pgRepository) GetSubscriptionByID(ctx context.Context, id string) (*Sub
 	}
 	defer rows.Close()
 
-	var lines []SubscriptionLine
+	lines := make([]SubscriptionLine, 0)
 	var totalCents int64 = 0
 	for rows.Next() {
 		var l SubscriptionLine
@@ -145,7 +145,7 @@ func (r *pgRepository) ListSubscriptions(ctx context.Context, customerID *string
 	}
 	defer rows.Close()
 
-	var subs []Subscription
+	subs := make([]Subscription, 0)
 	for rows.Next() {
 		var s Subscription
 		if err := rows.Scan(
@@ -178,7 +178,7 @@ func (r *pgRepository) GetSubscriptionsDueForBilling(ctx context.Context, cutoff
 	}
 	defer rows.Close()
 
-	var subs []Subscription
+	subs := make([]Subscription, 0)
 	for rows.Next() {
 		var s Subscription
 		if err := rows.Scan(
@@ -253,7 +253,7 @@ func (r *pgRepository) ListEvents(ctx context.Context, subscriptionID string) ([
 	}
 	defer rows.Close()
 
-	var events []SubscriptionEvent
+	events := make([]SubscriptionEvent, 0)
 	for rows.Next() {
 		var e SubscriptionEvent
 		var rawPayload []byte

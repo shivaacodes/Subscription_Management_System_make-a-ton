@@ -87,7 +87,7 @@ func (r *pgRepository) ListProducts(ctx context.Context, activeOnly bool) ([]Pro
 	}
 	defer rows.Close()
 
-	var products []Product
+	products := make([]Product, 0)
 	for rows.Next() {
 		var p Product
 		if err := rows.Scan(&p.ID, &p.Name, &p.ProductType, &p.SalesPriceCents, &p.CostPriceCents, &p.Notes, &p.IsActive, &p.CreatedAt, &p.UpdatedAt); err != nil {
@@ -143,7 +143,7 @@ func (r *pgRepository) ListVariantsByProductID(ctx context.Context, productID st
 	}
 	defer rows.Close()
 
-	var variants []ProductVariant
+	variants := make([]ProductVariant, 0)
 	for rows.Next() {
 		var v ProductVariant
 		if err := rows.Scan(&v.ID, &v.ProductID, &v.Name, &v.PriceAdjustmentCents, &v.IsActive, &v.CreatedAt, &v.UpdatedAt); err != nil {
@@ -176,7 +176,7 @@ func (r *pgRepository) ListTaxRules(ctx context.Context) ([]TaxRule, error) {
 	}
 	defer rows.Close()
 
-	var rules []TaxRule
+	rules := make([]TaxRule, 0)
 	for rows.Next() {
 		var t TaxRule
 		if err := rows.Scan(&t.ID, &t.Name, &t.RateBps, &t.Country, &t.IsActive, &t.CreatedAt); err != nil {
@@ -215,7 +215,7 @@ func (r *pgRepository) ListDiscountRules(ctx context.Context) ([]DiscountRule, e
 	}
 	defer rows.Close()
 
-	var rules []DiscountRule
+	rules := make([]DiscountRule, 0)
 	for rows.Next() {
 		var d DiscountRule
 		if err := rows.Scan(

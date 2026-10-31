@@ -110,7 +110,7 @@ func (r *pgRepository) GetInvoiceByID(ctx context.Context, id string) (*Invoice,
 	}
 	defer rows.Close()
 
-	var lines []InvoiceLine
+	lines := make([]InvoiceLine, 0)
 	for rows.Next() {
 		var l InvoiceLine
 		var variantName string
@@ -151,7 +151,7 @@ func (r *pgRepository) ListInvoices(ctx context.Context, customerID *string, sta
 	}
 	defer rows.Close()
 
-	var list []Invoice
+	list := make([]Invoice, 0)
 	for rows.Next() {
 		var inv Invoice
 		if err := rows.Scan(
@@ -231,7 +231,7 @@ func (r *pgRepository) ListRecentBillingRuns(ctx context.Context, limit int) ([]
 	}
 	defer rows.Close()
 
-	var runs []BillingRun
+	runs := make([]BillingRun, 0)
 	for rows.Next() {
 		var run BillingRun
 		if err := rows.Scan(
@@ -260,7 +260,7 @@ func (r *pgRepository) ListRecentAttempts(ctx context.Context, limit int) ([]Bil
 	}
 	defer rows.Close()
 
-	var attempts []BillingAttempt
+	attempts := make([]BillingAttempt, 0)
 	for rows.Next() {
 		var a BillingAttempt
 		if err := rows.Scan(&a.ID, &a.BillingRunID, &a.SubscriptionID, &a.SubscriptionNumber, &a.Status, &a.ErrorMessage, &a.AttemptNumber, &a.CreatedAt); err != nil {

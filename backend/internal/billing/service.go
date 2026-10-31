@@ -188,6 +188,13 @@ func (s *billingService) GetReliabilityMetrics(ctx context.Context) (*Reliabilit
 	runs, _ := s.repo.ListRecentBillingRuns(ctx, 10)
 	attempts, _ := s.repo.ListRecentAttempts(ctx, 20)
 
+	if runs == nil {
+		runs = []BillingRun{}
+	}
+	if attempts == nil {
+		attempts = []BillingAttempt{}
+	}
+
 	var dupPrevented = 0
 	for _, a := range attempts {
 		if a.ErrorMessage != nil && *a.ErrorMessage == "Skipped: invoice already generated for this billing cycle" {
