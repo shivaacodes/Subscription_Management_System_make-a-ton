@@ -185,7 +185,7 @@ export function BillingPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-slate-900">
-              {metrics ? metrics.recentRuns.length : 0}
+              {metrics?.recentRuns?.length ?? 0}
             </div>
             <p className="text-[11px] text-slate-500 mt-1">Batch runs recorded</p>
           </CardContent>
@@ -196,7 +196,7 @@ export function BillingPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">Generated Invoices & Statements</CardTitle>
-          <span className="text-xs text-slate-500">{invoices.length} statement(s) issued</span>
+          <span className="text-xs text-slate-500">{(invoices || []).length} statement(s) issued</span>
         </CardHeader>
         <CardContent>
           <table className="w-full text-left text-sm">
@@ -213,7 +213,7 @@ export function BillingPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {invoices.length > 0 ? (
+              {(invoices || []).length > 0 ? (
                 invoices.map((inv) => (
                   <tr key={inv.id}>
                     <td className="py-3 px-4 font-mono font-bold text-indigo-600">{inv.invoiceNumber}</td>
