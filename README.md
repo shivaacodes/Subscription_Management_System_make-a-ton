@@ -127,3 +127,4 @@ Open `http://localhost:5173`.
 | **Member 4** | `feat/quotations-portal` | Quotation templates, proposals to subscriptions, Customer portal, revenue reports |
 
 See `docs/team-workflow.md` for guidelines.
+
