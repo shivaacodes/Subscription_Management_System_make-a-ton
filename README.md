@@ -123,7 +123,8 @@ Open `http://localhost:5173`.
 | :--- | :--- | :--- |
 | **Member 1 (Lead)** | `feat/subscription-lifecycle` | Subscriptions CRUD, lifecycle state transitions, renewals, add-on toggling, audit timeline |
 | **Member 2** | `feat/catalog-plans` | Products, variants (+₹560 Odoo brand), plans, taxes, admin discount rules |
-| **Member 3** | `feat/billing-engine` | Recurring billing runner, idempotent invoicing, Billing Reliability Center, payments |
+| Farhan Aslam | `feat/billing-engine` | Recurring billing runner, idempotent invoicing, Billing Reliability Center, payments |
 | **Member 4** | `feat/quotations-portal` | Quotation templates, proposals to subscriptions, Customer portal, revenue reports |
 
 See `docs/team-workflow.md` for guidelines.
+
