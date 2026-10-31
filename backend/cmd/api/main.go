@@ -14,8 +14,15 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/subflow/backend/internal/auth"
+	"github.com/subflow/backend/internal/billing"
+	"github.com/subflow/backend/internal/catalog"
 	"github.com/subflow/backend/internal/config"
+	"github.com/subflow/backend/internal/payments"
+	"github.com/subflow/backend/internal/plans"
 	"github.com/subflow/backend/internal/platform"
+	"github.com/subflow/backend/internal/quotations"
+	"github.com/subflow/backend/internal/reporting"
+	"github.com/subflow/backend/internal/subscriptions"
 	"github.com/subflow/backend/internal/users"
 )
 
@@ -55,14 +62,40 @@ func main() {
 	authService := auth.NewService(userRepo, sessionRepo)
 	authHandler := auth.NewHandler(authService, cfg)
 
+	catalogRepo := catalog.NewRepository(pool)
+	catalogService := catalog.NewService(catalogRepo)
+	catalogHandler := catalog.NewHandler(catalogService)
+
+	planRepo := plans.NewRepository(pool)
+	planService := plans.NewService(planRepo)
+	planHandler := plans.NewHandler(planService)
+
+	subRepo := subscriptions.NewRepository(pool)
+	subService := subscriptions.NewService(subRepo, planService)
+	subHandler := subscriptions.NewHandler(subService)
+
+	quoteRepo := quotations.NewRepository(pool)
+	quoteService := quotations.NewService(quoteRepo, subService)
+	quoteHandler := quotations.NewHandler(quoteService)
+
+	billingRepo := billing.NewRepository(pool)
+	billingService := billing.NewService(billingRepo, subRepo, planService)
+	billingHandler := billing.NewHandler(billingService)
+
+	paymentRepo := payments.NewRepository(pool)
+	paymentService := payments.NewService(paymentRepo, billingService)
+	paymentHandler := payments.NewHandler(paymentService)
+
+	reportingRepo := reporting.NewRepository(pool)
+	reportingService := reporting.NewService(reportingRepo)
+	reportingHandler := reporting.NewHandler(reportingService)
+
 	// 6. Router Setup
 	r := chi.NewRouter()
 
-	// Global Middleware
 	r.Use(platform.Recoverer)
 	r.Use(platform.RequestLogger)
 
-	// CORS Configuration
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   cfg.CORSAllowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
@@ -72,7 +105,6 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	// Session Context Middleware
 	r.Use(platform.SessionAuthMiddleware(authService))
 
 	// API v1 Routes
@@ -103,16 +135,109 @@ func main() {
 			})
 		})
 
-		// Role Protected Verification Endpoint
+		// Protected Routes
 		r.Group(func(r chi.Router) {
 			r.Use(platform.RequireAuth)
-			r.Use(platform.RequireRole(users.RoleAdmin))
 
-			r.Get("/admin/ping", func(w http.ResponseWriter, r *http.Request) {
-				user := platform.GetUserFromContext(r.Context())
-				platform.WriteJSON(w, http.StatusOK, map[string]string{
-					"message":   fmt.Sprintf("Welcome Admin %s, role authorization successfully verified", user.Email),
-					"timestamp": time.Now().UTC().Format(time.RFC3339),
+			// Catalog & Products
+			r.Route("/catalog", func(r chi.Router) {
+				r.Get("/products", catalogHandler.ListProducts)
+				r.Get("/products/{id}", catalogHandler.GetProduct)
+
+				r.Group(func(r chi.Router) {
+					r.Use(platform.RequireRole(users.RoleAdmin))
+					r.Post("/products", catalogHandler.CreateProduct)
+					r.Put("/products/{id}", catalogHandler.UpdateProduct)
+					r.Post("/products/{productId}/variants", catalogHandler.CreateVariant)
+					r.Put("/variants/{id}", catalogHandler.UpdateVariant)
+				})
+			})
+
+			// Taxes & Discounts (Admin only)
+			r.Route("/taxes", func(r chi.Router) {
+				r.Get("/", catalogHandler.ListTaxes)
+				r.Group(func(r chi.Router) {
+					r.Use(platform.RequireRole(users.RoleAdmin))
+					r.Post("/", catalogHandler.CreateTax)
+				})
+			})
+
+			r.Route("/discounts", func(r chi.Router) {
+				r.Get("/", catalogHandler.ListDiscounts)
+				r.Group(func(r chi.Router) {
+					r.Use(platform.RequireRole(users.RoleAdmin))
+					r.Post("/", catalogHandler.CreateDiscount)
+				})
+			})
+
+			// Subscription Plans
+			r.Route("/plans", func(r chi.Router) {
+				r.Get("/", planHandler.ListPlans)
+				r.Get("/{id}", planHandler.GetPlan)
+
+				r.Group(func(r chi.Router) {
+					r.Use(platform.RequireRole(users.RoleAdmin))
+					r.Post("/", planHandler.CreatePlan)
+					r.Post("/{planId}/products", planHandler.LinkProduct)
+				})
+			})
+
+			// Quotations
+			r.Route("/quotations", func(r chi.Router) {
+				r.Get("/", quoteHandler.ListQuotations)
+				r.Post("/", quoteHandler.CreateQuotation)
+				r.Get("/{id}", quoteHandler.GetQuotation)
+				r.Post("/{id}/convert", quoteHandler.ConvertQuotation)
+			})
+			r.Get("/quotation-templates", quoteHandler.ListTemplates)
+
+			// Subscriptions
+			r.Route("/subscriptions", func(r chi.Router) {
+				r.Get("/", subHandler.ListSubscriptions)
+				r.Post("/", subHandler.CreateSubscription)
+				r.Get("/{id}", subHandler.GetSubscription)
+				r.Post("/{id}/activate", subHandler.ActivateSubscription)
+				r.Post("/{id}/pause", subHandler.PauseSubscription)
+				r.Post("/{id}/resume", subHandler.ResumeSubscription)
+				r.Post("/{id}/cancel", subHandler.CancelSubscription)
+				r.Post("/{id}/addons", subHandler.ToggleAddon)
+				r.Get("/{id}/timeline", subHandler.GetTimeline)
+			})
+
+			// Billing & Invoices
+			r.Route("/billing", func(r chi.Router) {
+				r.Post("/preview", billingHandler.PreviewCalculation)
+				r.Get("/reliability", billingHandler.GetReliabilityCenter)
+				r.Post("/run", billingHandler.TriggerBillingRun)
+			})
+
+			r.Route("/invoices", func(r chi.Router) {
+				r.Get("/", billingHandler.ListInvoices)
+				r.Get("/{id}", billingHandler.GetInvoice)
+				r.Post("/{id}/confirm", billingHandler.ConfirmInvoice)
+				r.Post("/{invoiceId}/payments", paymentHandler.RecordPayment)
+			})
+
+			// Payments
+			r.Route("/payments", func(r chi.Router) {
+				r.Get("/", paymentHandler.ListPayments)
+			})
+
+			// Reporting & Analytics
+			r.Route("/reporting", func(r chi.Router) {
+				r.Use(platform.RequireRole(users.RoleAdmin, users.RoleStaff))
+				r.Get("/dashboard", reportingHandler.GetDashboardMetrics)
+			})
+
+			// Admin Verification
+			r.Group(func(r chi.Router) {
+				r.Use(platform.RequireRole(users.RoleAdmin))
+				r.Get("/admin/ping", func(w http.ResponseWriter, r *http.Request) {
+					user := platform.GetUserFromContext(r.Context())
+					platform.WriteJSON(w, http.StatusOK, map[string]string{
+						"message":   fmt.Sprintf("Welcome Admin %s, role authorization successfully verified", user.Email),
+						"timestamp": time.Now().UTC().Format(time.RFC3339),
+					})
 				})
 			})
 		})
